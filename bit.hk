@@ -1,1 +1,6 @@
-
+[package]
+-> name        => regex
+-> version     => 0.1
+-> description => 
+-> author      => Bit Developers
+-> license     => MIT
