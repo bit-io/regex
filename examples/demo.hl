@@ -1,0 +1,74 @@
+#!/usr/bin/hl
+/// Demo: main/regex.hl — przyklady uzycia wszystkich funkcji
+using <gen 2>
+
+<< ../source-code/main.hl
+
+::hr 60
+::cyan  regex.hl — demo
+::hr 60
+::nl
+
+;; ── dopasowanie ──────────────────────────────────────────────────────────────
+% _regex_str = "2026-09-23"
+% _regex_pattern = @REGEX_DATE_ISO
+-- regex_match
+? ok
+    ::green "@_regex_str" wyglada jak data ISO
+done
+? err
+    ::red "@_regex_str" to nie data ISO
+done
+
+;; ── wyszukiwanie ─────────────────────────────────────────────────────────────
+% _regex_str = "Kontakt: jan.kowalski@example.com lub biuro@firma.pl"
+% _regex_pattern = @REGEX_EMAIL
+-- regex_find_all
+~> Znalezione adresy e-mail:
+~> @_regex_result
+
+-- regex_count
+~> Liczba adresow: @_regex_count
+
+;; ── zamiana ──────────────────────────────────────────────────────────────────
+% _regex_str = "Cena: 100 PLN, rabat: 20 PLN"
+% _regex_pattern = [0-9]+
+% _regex_replacement = "***"
+-- regex_replace_all
+~> Po ukryciu liczb: @_regex_result
+
+;; ── grupy przechwytujace ─────────────────────────────────────────────────────
+% _regex_str = "Autor: Jan Kowalski <jan@example.com>"
+% _regex_pattern = <([^>]+)>
+% _regex_group = 1
+-- regex_extract_group
+~> Wyciagniety e-mail: @_regex_result
+
+;; ── podzial ──────────────────────────────────────────────────────────────────
+% _regex_str = "jablko,  banan ,,gruszka"
+% _regex_pattern = "[, ]+"
+-- regex_split
+~> Fragmenty po podziale:
+~> @_regex_result
+
+;; ── budowanie wzorca z danych uzytkownika (regex_escape) ─────────────────────
+% _regex_str = "C++ (wersja 2.0)"
+-- regex_escape
+~> Bezpieczny literalny wzorzec: @_regex_result
+
+% _regex_pattern = @_regex_result
+% _regex_str = "Jezyk: C++ (wersja 2.0) — nadal popularny"
+-- regex_match
+? ok
+    ::green Literalne dopasowanie zadzialalo poprawnie
+done
+
+;; ── walidacja wzorca ─────────────────────────────────────────────────────────
+% _regex_pattern = "[0-9+"
+-- regex_valid
+? err
+    ::yellow Wzorzec "[0-9+" jest niepoprawny (brakuje ])
+done
+
+::nl
+::hr 60
