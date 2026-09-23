@@ -1,0 +1,193 @@
+#!/usr/bin/hl
+/// Testy main/regex.hl (gen 2)
+using <gen 2>
+
+<< ../regex.hl
+
+% pass = 0
+% fail = 0
+
+: chk def
+    ;; % _name, % _got, % _exp -> porownanie tekstowe
+    > test "@_got" = "@_exp"
+    ? ok
+        $(@pass + 1) -> @pass
+        ::green PASS — @_name
+    done
+    ? err
+        $(@fail + 1) -> @fail
+        ::red FAIL — @_name  got=[@_got]  exp=[@_exp]
+    done
+done
+
+: chk_exit_ok def
+    ;; ostatnia komenda (dopasowanie regex) musi zwrocic exit 0
+    ? ok
+        $(@pass + 1) -> @pass
+        ::green PASS — @_name
+    done
+    ? err
+        $(@fail + 1) -> @fail
+        ::red FAIL — @_name (oczekiwano dopasowania)
+    done
+done
+
+: chk_exit_err def
+    ? ok
+        $(@fail + 1) -> @fail
+        ::red FAIL — @_name (nie powinno dopasowac)
+    done
+    ? err
+        $(@pass + 1) -> @pass
+        ::green PASS — @_name
+    done
+done
+
+::hr 60
+::cyan Testy main/regex.hl
+::hr 60
+::nl
+
+;; ── regex_match ──────────────────────────────────────────────────────────────
+% _regex_str = "2026-09-23"
+% _regex_pattern = @REGEX_DATE_ISO
+-- regex_match
+% _name = "regex_match: data ISO pasuje"
+-- chk_exit_ok
+
+% _regex_str = "nie data"
+-- regex_match
+% _name = "regex_match: brak dopasowania"
+-- chk_exit_err
+
+;; ── regex_match z $ w tekscie/wzorcu ─────────────────────────────────────────
+% _regex_str = "cena: $42"
+% _regex_pattern = \$[0-9]+
+-- regex_match
+% _name = "regex_match: dolar w tekscie i wzorcu"
+-- chk_exit_ok
+
+;; ── regex_match_i ────────────────────────────────────────────────────────────
+% _regex_str = "HELLO world"
+% _regex_pattern = hello
+-- regex_match_i
+% _name = "regex_match_i: bez rozroznienia wielkosci liter"
+-- chk_exit_ok
+
+;; ── regex_full_match ─────────────────────────────────────────────────────────
+% _regex_str = "12345"
+% _regex_pattern = [0-9]+
+-- regex_full_match
+% _name = "regex_full_match: caly string to cyfry"
+-- chk_exit_ok
+
+% _regex_str = "12345x"
+-- regex_full_match
+% _name = "regex_full_match: dodatkowy znak nie przechodzi"
+-- chk_exit_err
+
+;; ── regex_starts_with / regex_ends_with ──────────────────────────────────────
+% _regex_str = "hello_world.hl"
+% _regex_pattern = hello
+-- regex_starts_with
+% _name = "regex_starts_with"
+-- chk_exit_ok
+
+% _regex_pattern = \.hl$
+-- regex_ends_with
+% _name = "regex_ends_with"
+-- chk_exit_ok
+
+;; ── regex_find ───────────────────────────────────────────────────────────────
+% _regex_str = "user: jan.kowalski@example.com dzisiaj"
+% _regex_pattern = @REGEX_EMAIL
+-- regex_find
+% _name = "regex_find: email"
+% _got = @_regex_result
+% _exp = jan.kowalski@example.com
+-- chk
+
+;; ── regex_find_all + regex_count ─────────────────────────────────────────────
+% _regex_str = "a1 b22 c333"
+% _regex_pattern = [0-9]+
+-- regex_count
+% _name = "regex_count: 3 grupy cyfr"
+% _got = @_regex_count
+% _exp = 3
+-- chk
+
+;; ── regex_replace / regex_replace_all ────────────────────────────────────────
+% _regex_str = "a1 b22 c333"
+% _regex_pattern = [0-9]+
+% _regex_replacement = X
+-- regex_replace
+% _name = "regex_replace: tylko pierwsze"
+% _got = @_regex_result
+% _exp = "aX b22 c333"
+-- chk
+
+-- regex_replace_all
+% _name = "regex_replace_all: wszystkie"
+% _got = @_regex_result
+% _exp = "aX bX cX"
+-- chk
+
+;; ── regex_extract_group ──────────────────────────────────────────────────────
+% _regex_str = "Name: John Doe <john@example.com>"
+% _regex_pattern = <([^>]+)>
+% _regex_group = 1
+-- regex_extract_group
+% _name = "regex_extract_group: adres z nawiasow <>"
+% _got = @_regex_result
+% _exp = john@example.com
+-- chk
+
+;; ── regex_split ──────────────────────────────────────────────────────────────
+% _regex_str = "a,, b ,,c"
+% _regex_pattern = "[, ]+"
+-- regex_split
+% _name = "regex_split: pierwszy fragment to 'a'"
+;; pierwsza linia wyniku:
+>> printf '%s' '@_regex_result' | head -n1 |> @_got
+% _exp = a
+-- chk
+
+;; ── regex_escape ─────────────────────────────────────────────────────────────
+% _regex_str = "1+1=2? (yes) [a.b]"
+-- regex_escape
+% _name = "regex_escape: metaznaki uciekniete"
+% _got = @_regex_result
+% _exp = "1\+1=2\? \(yes\) \[a\.b\]"
+-- chk
+
+;; escaped wynik powinien pasowac literalnie do oryginalu
+% _regex_str = "1+1=2? (yes) [a.b]"
+% _regex_pattern = @_regex_result
+-- regex_full_match
+% _name = "regex_escape: wynik dziala jako literalny wzorzec"
+-- chk_exit_ok
+
+;; ── regex_valid ──────────────────────────────────────────────────────────────
+% _regex_pattern = [0-9]+
+-- regex_valid
+% _name = "regex_valid: poprawny wzorzec"
+-- chk_exit_ok
+
+% _regex_pattern = "[0-9+"
+-- regex_valid
+% _name = "regex_valid: niepoprawny wzorzec (niedomkniety nawias)"
+-- chk_exit_err
+
+::nl
+::hr 60
+~> PASS: @pass  FAIL: @fail
+::hr 60
+
+> test "@fail" = "0"
+? ok
+    ::green Wszystkie testy regex przeszly!
+done
+? err
+    ::red Bledy w testach regex: @fail
+    > exit 1
+done
